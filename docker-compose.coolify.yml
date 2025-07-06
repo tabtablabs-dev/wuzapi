@@ -15,6 +15,8 @@ services:
       - TZ=${TZ:-America/Los_Angeles}
       - WEBHOOK_FORMAT=${WEBHOOK_FORMAT:-json}
       - SESSION_DEVICE_NAME=${SESSION_DEVICE_NAME:-WuzAPI}
+      - RABBITMQ_URL=${RABBITMQ_URL:-}
+      - RABBITMQ_QUEUE=${RABBITMQ_QUEUE:-whatsapp_events}
     depends_on:
       db:
         condition: service_healthy
