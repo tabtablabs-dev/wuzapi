@@ -3,16 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "${WUZAPI_PORT:-8080}:8080"  # Coolify will handle external routing
+    expose:
+      - "8080"  # Use expose instead of ports for Coolify
     environment:
       - WUZAPI_ADMIN_TOKEN=${WUZAPI_ADMIN_TOKEN}
-      - DB_USER=${DB_USER}
+      - DB_USER=${DB_USER:-wuzapi}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
+      - DB_NAME=${DB_NAME:-wuzapi}
       - DB_HOST=db
-      - DB_PORT=${DB_PORT:-5432}
-      - TZ=${TZ:-America/Sao_Paulo}
+      - DB_PORT=5432
+      - TZ=${TZ:-America/Los_Angeles}
       - WEBHOOK_FORMAT=${WEBHOOK_FORMAT:-json}
       - SESSION_DEVICE_NAME=${SESSION_DEVICE_NAME:-WuzAPI}
     depends_on:
@@ -20,26 +20,30 @@ services:
         condition: service_healthy
     networks:
       - wuzapi-network
-    restart: on-failure
+    labels:
+      - "coolify.managed=true"
+      - "coolify.type=application"
+      - "coolify.name=wuzapi"
+      - "coolify.port=8080"
+    restart: unless-stopped
 
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USER: ${DB_USER:-wuzapi}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    # ports:
-    #   - "${DB_EXTERNAL_PORT:-5432}:5432"  # Not needed for Coolify - internal network only
+      POSTGRES_DB: ${DB_NAME:-wuzapi}
+    # No ports exposed - internal network only
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:
       - wuzapi-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-wuzapi}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: always
+    restart: unless-stopped
       
 networks:
   wuzapi-network:
